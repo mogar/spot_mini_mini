@@ -6,7 +6,7 @@ SUBSCRIBERS:
 """
 
 from __future__ import division
-import rospy
+import rclpy
 import numpy as np
 from mini_interfaces.msg import MiniCmd, JoyButtons, IMUdata, ContactData, AgentData, JointAngles
 import copy
@@ -25,33 +25,33 @@ from spot_bullet.src.ars_lib.ars import ARSAgent, Normalizer, Policy
 from spotmicro.GymEnvs.spot_bezier_env import spotBezierEnv
 
 # Initialize Node
-rospy.init_node('Policies', anonymous=True)
+rclpy.init_node('Policies', anonymous=True)
 
 # Controller Params
-STEPLENGTH_SCALE = rospy.get_param("STEPLENGTH_SCALE")
-Z_SCALE_CTRL = rospy.get_param("Z_SCALE_CTRL")
-RPY_SCALE = rospy.get_param("RPY_SCALE")
-SV_SCALE = rospy.get_param("SV_SCALE")
-CHPD_SCALE = rospy.get_param("CHPD_SCALE")
-YAW_SCALE = rospy.get_param("YAW_SCALE")
+STEPLENGTH_SCALE = rclpy.get_param("STEPLENGTH_SCALE")
+Z_SCALE_CTRL = rclpy.get_param("Z_SCALE_CTRL")
+RPY_SCALE = rclpy.get_param("RPY_SCALE")
+SV_SCALE = rclpy.get_param("SV_SCALE")
+CHPD_SCALE = rclpy.get_param("CHPD_SCALE")
+YAW_SCALE = rclpy.get_param("YAW_SCALE")
 
 # AGENT PARAMS
-CD_SCALE = rospy.get_param("CD_SCALE")
-SLV_SCALE = rospy.get_param("SLV_SCALE")
-RESIDUALS_SCALE = rospy.get_param("RESIDUALS_SCALE")
-Z_SCALE = rospy.get_param("Z_SCALE")
+CD_SCALE = rclpy.get_param("CD_SCALE")
+SLV_SCALE = rclpy.get_param("SLV_SCALE")
+RESIDUALS_SCALE = rclpy.get_param("RESIDUALS_SCALE")
+Z_SCALE = rclpy.get_param("Z_SCALE")
 # Filter actions
-alpha = rospy.get_param("alpha")
+alpha = rclpy.get_param("alpha")
 # Added this to avoid filtering residuals
 # -1 for all
-actions_to_filter = rospy.get_param("actions_to_filter")
+actions_to_filter = rclpy.get_param("actions_to_filter")
 
 
 class SpotCommander():
     def __init__(self, Agent=True, contacts=False):
 
         self.Agent = Agent
-        self.agent_num = rospy.get_param("agent_num")
+        self.agent_num = rclpy.get_param("agent_num")
         self.movetypes = ["Stop"]
         self.mini_cmd = MiniCmd()
         self.jb = JoyButtons()
@@ -65,23 +65,23 @@ class SpotCommander():
         self.mini_cmd.motion = "Stop"
         self.mini_cmd.movement = "Stepping"
         # FIXED
-        self.BaseStepVelocity = rospy.get_param("BaseStepVelocity")
+        self.BaseStepVelocity = rclpy.get_param("BaseStepVelocity")
         self.StepVelocity = copy.deepcopy(self.BaseStepVelocity)
         # Stock, use Bumpers to change
-        self.BaseSwingPeriod = rospy.get_param("Tswing")
+        self.BaseSwingPeriod = rclpy.get_param("Tswing")
         self.SwingPeriod = copy.deepcopy(self.BaseSwingPeriod)
-        self.SwingPeriod_LIMITS = rospy.get_param("SwingPeriod_LIMITS")
+        self.SwingPeriod_LIMITS = rclpy.get_param("SwingPeriod_LIMITS")
         # Stock, use arrow pads to change
-        self.BaseClearanceHeight = rospy.get_param("BaseClearanceHeight")
-        self.BasePenetrationDepth = rospy.get_param("BasePenetrationDepth")
+        self.BaseClearanceHeight = rclpy.get_param("BaseClearanceHeight")
+        self.BasePenetrationDepth = rclpy.get_param("BasePenetrationDepth")
         self.ClearanceHeight = copy.deepcopy(self.BaseClearanceHeight)
         self.PenetrationDepth = copy.deepcopy(self.BasePenetrationDepth)
-        self.ClearanceHeight_LIMITS = rospy.get_param("ClearanceHeight_LIMITS")
-        self.PenetrationDepth_LIMITS = rospy.get_param(
+        self.ClearanceHeight_LIMITS = rclpy.get_param("ClearanceHeight_LIMITS")
+        self.PenetrationDepth_LIMITS = rclpy.get_param(
             "PenetrationDepth_LIMITS")
 
         # Time
-        self.time = rospy.get_time()
+        self.time = rclpy.get_time()
 
         self.enable_contact = contacts
 
@@ -93,44 +93,44 @@ class SpotCommander():
 
         # See spot_params.yaml in config
         self.spot = SpotModel(
-            shoulder_length=rospy.get_param("shoulder_length"),
-            elbow_length=rospy.get_param("elbow_length"),
-            wrist_length=rospy.get_param("wrist_length"),
-            hip_x=rospy.get_param("hip_x"),
-            hip_y=rospy.get_param("hip_y"),
-            foot_x=rospy.get_param("foot_x"),
-            foot_y=rospy.get_param("foot_y"),
-            height=rospy.get_param("height"),
-            com_offset=rospy.get_param("com_offset"))
+            shoulder_length=rclpy.get_param("shoulder_length"),
+            elbow_length=rclpy.get_param("elbow_length"),
+            wrist_length=rclpy.get_param("wrist_length"),
+            hip_x=rclpy.get_param("hip_x"),
+            hip_y=rclpy.get_param("hip_y"),
+            foot_x=rclpy.get_param("foot_x"),
+            foot_y=rclpy.get_param("foot_y"),
+            height=rclpy.get_param("height"),
+            com_offset=rclpy.get_param("com_offset"))
 
         self.T_bf0 = self.spot.WorldToFoot
         self.T_bf = copy.deepcopy(self.T_bf0)
 
         # See spot_params.yaml in config
-        self.bzg = BezierGait(dt=rospy.get_param("dt"),
-                              Tswing=rospy.get_param("Tswing"))
+        self.bzg = BezierGait(dt=rclpy.get_param("dt"),
+                              Tswing=rclpy.get_param("Tswing"))
 
         if self.Agent:
             self.load_spot(contacts, agent_num=self.agent_num)
         # cmd_cb from mini_cmd topic
-        self.sub_cmd = rospy.Subscriber('mini_cmd',
+        self.sub_cmd = rclpy.Subscriber('mini_cmd',
                                         MiniCmd,
                                         self.cmd_cb,
                                         queue_size=1)
-        self.sub_jb = rospy.Subscriber('joybuttons',
+        self.sub_jb = rclpy.Subscriber('joybuttons',
                                        JoyButtons,
                                        self.jb_cb,
                                        queue_size=1)
-        self.sub_imu = rospy.Subscriber('spot/imu',
+        self.sub_imu = rclpy.Subscriber('spot/imu',
                                         IMUdata,
                                         self.imu_cb,
                                         queue_size=1)
-        self.sub_cnt = rospy.Subscriber('spot/contact',
+        self.sub_cnt = rclpy.Subscriber('spot/contact',
                                         ContactData,
                                         self.cnt_cb,
                                         queue_size=1)
-        self.ag_pub = rospy.Publisher('spot/agent', AgentData, queue_size=1)
-        self.ja_pub = rospy.Publisher('spot/joints', JointAngles, queue_size=1)
+        self.ag_pub = rclpy.Publisher('spot/agent', AgentData, queue_size=1)
+        self.ja_pub = rclpy.Publisher('spot/joints', JointAngles, queue_size=1)
         print("READY TO GO!")
 
     def load_spot(self, contacts, state_dim=12, action_dim=14, agent_num=0):
@@ -175,8 +175,8 @@ class SpotCommander():
                 np.radians(imu.gyro_z), imu.acc_x, imu.acc_y, imu.acc_z - 9.81
             ]
             # log input data as debug-level message
-            rospy.logdebug(imu)
-        except rospy.ROSInterruptException:
+            rclpy.logdebug(imu)
+        except rclpy.ROSInterruptException:
             pass
 
     def cnt_cb(self, cnt):
@@ -188,8 +188,8 @@ class SpotCommander():
             # Update contacts
             self.contacts = [cnt.FL, cnt.FR, cnt.BL, cnt.BR]
             # log input data as debug-level message
-            rospy.logdebug(cnt)
-        except rospy.ROSInterruptException:
+            rclpy.logdebug(cnt)
+        except rclpy.ROSInterruptException:
             pass
 
     def cmd_cb(self, mini_cmd):
@@ -201,8 +201,8 @@ class SpotCommander():
             # Update mini_cmd
             self.mini_cmd = mini_cmd
             # log input data as debug-level message
-            rospy.logdebug(mini_cmd)
-        except rospy.ROSInterruptException:
+            rclpy.logdebug(mini_cmd)
+        except rclpy.ROSInterruptException:
             pass
 
     def jb_cb(self, jb):
@@ -214,8 +214,8 @@ class SpotCommander():
             # Update jb
             self.jb = jb
             # log input data as debug-level message
-            rospy.logdebug(jb)
-        except rospy.ROSInterruptException:
+            rclpy.logdebug(jb)
+        except rclpy.ROSInterruptException:
             pass
 
     def move(self):
@@ -311,9 +311,9 @@ class SpotCommander():
             self.ClearanceHeight += self.action[0] * CD_SCALE
 
         # Time
-        dt = rospy.get_time() - self.time
+        dt = rclpy.get_time() - self.time
         # print("dt: {}".format(dt))
-        self.time = rospy.get_time()
+        self.time = rclpy.get_time()
 
         # Update Step Period
         self.bzg.Tswing = self.SwingPeriod
@@ -373,16 +373,16 @@ class SpotCommander():
 def main():
     """ The main() function. """
     mini_commander = SpotCommander()
-    rate = rospy.Rate(600.0)
-    while not rospy.is_shutdown():
+    rate = rclpy.Rate(600.0)
+    while not rclpy.is_shutdown():
         # This is called continuously. Has timeout functionality too
         mini_commander.move()
         rate.sleep()
-        # rospy.spin()
+        # rclpy.spin()
 
 
 if __name__ == '__main__':
     try:
         main()
-    except rospy.ROSInterruptException:
+    except rclpy.ROSInterruptException:
         pass

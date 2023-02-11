@@ -3,7 +3,12 @@
 /// \file
 /// \brief Spots library which contains control functionality for Spot Mini Mini.
 #include <vector>
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+
+#include "mini_interfaces/msg/mini_cmd.hpp"
+#include "std_srvs/srv/empty.hpp"
+#include "std_msgs/msg/bool.hpp"
 
 namespace spot
 {
@@ -50,12 +55,30 @@ namespace spot
     };
 
     // \brief Spot class responsible for high-level motion commands
-    class Spot
+    class Spot : public rclcpp::Node
     {
 
     public:
         // \brief Constructor for Spot class
-        Spot();
+        Spot(uint64_t threshold_ns);
+
+		/// \brief cmd_vel subscriber callback. Records commanded twist
+		///
+		/// \param tw (geometry_msgs::Twist): the commanded linear and angular velocity
+		/** 
+		 * This function runs every time we get a geometry_msgs::Twist message on the "cmd_vel" topic.
+		 * We generally use the const <message>ConstPtr &msg syntax to prevent our node from accidentally
+		 * changing the message, in the case that another node is also listening to it.
+		 */
+        void teleopCallback(const geometry_msgs::msg::Twist &tw);
+
+	    void estopCallback(const std_msgs::msg::Bool &estop);
+
+        /// Switches the Movement mode from FB (Forward/Backward) to LR (Left/Right)
+	    /// and vice versa
+	    bool swmCallback(std::shared_ptr<std_srvs::srv::Empty::Request> req, std::shared_ptr<std_srvs::srv::Empty::Response> rsp);
+
+	    void timerCallback();
 
         // \brief updates the type and velocity of motion to be commanded to the Spot
         // \param vx: linear velocity (x)
@@ -75,7 +98,25 @@ namespace spot
         SpotCommand return_command();
 
     private:
+        mini_interfaces::msg::MiniCmd mini_cmd_;
+
         SpotCommand cmd;
+        rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr teleop_sub_;
+        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr estop_sub_;
+        rclcpp::Publisher<mini_interfaces::msg::MiniCmd>::SharedPtr mini_pub_;
+        rclcpp::Service<std_srvs::srv::Empty>::SharedPtr switch_mvmnt_service_;
+        
+        // state
+        bool teleop_flag_;
+        bool motion_flag_;
+        bool ESTOP_;
+
+        // timer and timekeeping
+        rclcpp::Time current_time_;
+        rclcpp::Time last_time_;
+        uint64_t timeout_ns_;
+        rclcpp::TimerBase::SharedPtr timer_;
+
     };
     
 }

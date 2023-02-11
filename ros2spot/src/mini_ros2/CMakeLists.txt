@@ -13,9 +13,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(mini_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
@@ -31,26 +36,26 @@ add_library(${PROJECT_NAME}
   src/${PROJECT_NAME}/teleop.cpp
 )
 
+ament_target_dependencies(${PROJECT_NAME} rclcpp mini_interfaces std_srvs std_msgs sensor_msgs geometry_msgs)
+
 # Create Cpp executable
 add_executable(spot_sm src/spot_sm.cpp)
 add_executable(teleop_node src/teleop_node.cpp)
 
-ament_target_dependencies(spot_sm rclcpp mini_interfaces)
-ament_target_dependencies(teleop_node rclcpp mini_interfaces)
+ament_target_dependencies(spot_sm rclcpp mini_interfaces std_srvs std_msgs)
+ament_target_dependencies(teleop_node rclcpp mini_interfaces sensor_msgs geometry_msgs std_srvs std_msgs)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(
 spot_sm
 # Eigen3::Eigen
 ${PROJECT_NAME}
-${catkin_LIBRARIES}
 )
 
 target_link_libraries(
 teleop_node
 # Eigen3::Eigen
 ${PROJECT_NAME}
-${catkin_LIBRARIES}
 )
 
 # Install Cpp executables
@@ -60,15 +65,20 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
 # Install Python modules
 ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  src/spot_pybullet_interface
-  src/spot_real_interface
-  src/servo_calibration
-  src/sensor_interface
+  mini_ros2/spot_pybullet_interface
+  mini_ros2/spot_real_interface
+  mini_ros2/servo_calibration
+  mini_ros2/sensor_interface
   DESTINATION lib/${PROJECT_NAME}
 )
 

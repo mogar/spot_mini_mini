@@ -3,47 +3,33 @@
 /// \file
 /// \brief Teleoperation Library that converts Joystick commands to motion
 #include <vector>
-#include <ros/ros.h>
-#include <geometry_msgs/Twist.h>
-#include <sensor_msgs/Joy.h>
-#include "mini_interfaces/JoyButtons.h"
+#include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "sensor_msgs/msg/joy.hpp"
+#include "std_msgs/msg/bool.hpp"
+#include "std_srvs/srv/empty.hpp"
+#include "mini_interfaces/msg/joy_buttons.hpp"
 
 namespace tele
 {
 
     // \brief Teleop class responsible for convertick Joystick commands into linear and angular velocity
-    class Teleop
+    class Teleop : public rclcpp::Node
     {
     public:
         // \brief Teleop constructor that defines the axes used for control and sets their scaling factor
-        // \param linear_x: joystick axis assigned to linear velocity (x)
-        // \param linear_y: joystick axis assigned to linear velocity (y)
-        // \param linear_z: joystick axis assigned to robot height [overloading]
-        // \param angular: joystick axis assigned to angular velocity
-        // \param l_scale: scaling factor for linear velocity
-        // \param a_scale: scaling factor for angular velocity
-        // \param LB: left bottom bumper axis
-        // \param RB: right bottom bumper axis
-        // \param B_scale: scaling factor for bottom bumpers
-        // \param LT: left top bumper button
-        // \param RT: right top bumper button
-        // \param UD: up/down key on arrow pad
-        // \param LR: left/right key on arrow pad
-        // \param sw: button for switch_trigger
-        // \param es: button for ESTOP
-        Teleop(const int & linear_x, const int & linear_y, const int & linear_z,
-               const int & angular, const double & l_scale, const double & a_scale,
-               const int & LB, const int & RB, const int & B_scale, const int & LT,
-               const int & RT, const int & UD, const int & LR,
-               const int & sw, const int & es);
+        Teleop();
+
+        // \brief Handles periodic operations of Teleop, including debounce and twist publishing
+        void timerCallback();
 
         // \brief Takes a Joy messages and converts it to linear and angular velocity (Twist)
         // \param joy: sensor_msgs describing Joystick inputs
-        void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
+        void joyCallback(const sensor_msgs::msg::Joy::ConstPtr& joy);
 
         // \brief returns the  most recently commanded Twist
         // \returns: Twist
-        geometry_msgs::Twist return_twist();
+        geometry_msgs::msg::Twist return_twist();
 
         // \brief returns a boolean indicating whether the movement switch trigger has been pressed
         // \returns: switch_trigger(bool)
@@ -54,9 +40,20 @@ namespace tele
         bool return_estop();
 
         /// \brief returns other joystick buttons triggers, arrow pad etc)
-        mini_ros::JoyButtons return_buttons();
+        mini_interfaces::msg::JoyButtons return_buttons();
 
     private:
+        // publishers
+        rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr estop_pub_;
+        rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+        rclcpp::Publisher<mini_interfaces::msg::JoyButtons>::SharedPtr jb_pub_;
+
+        // subscribers
+        rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+
+        // Clients
+        rclcpp::Client<std_srvs::srv::Empty>::SharedPtr switch_mvmnt_client_;
+
         // AXES ON JOYSTICK
         int linear_x_ = 0;
         int linear_y_ = 0;
@@ -71,17 +68,24 @@ namespace tele
         int LT_ = 0;
         int UD_ = 0;
         int LR_ = 0;
+        // DEBOUNCE THRESHOLD
+        uint64_t debounce_thresh_;
         // AXIS SCALES
         double l_scale_, a_scale_, B_scale_;
         // TWIST
-        geometry_msgs::Twist twist;
+        geometry_msgs::msg::Twist twist_;
         // TRIGGERS
-        bool switch_trigger = false;
-        bool ESTOP = false;
-        int updown = 0;
-        int leftright = 0;
-        bool left_bump = false;
-        bool right_bump = false;
+        bool switch_trigger_ = false;
+        bool ESTOP_ = false;
+        int updown_ = 0;
+        int leftright_ = 0;
+        bool left_bump_ = false;
+        bool right_bump_ = false;
+
+        // timer and timekeeping
+        rclcpp::Time current_time_;
+        rclcpp::Time last_time_;
+        rclcpp::TimerBase::SharedPtr timer_;
     };
     
 }
