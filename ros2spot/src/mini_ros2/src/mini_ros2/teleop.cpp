@@ -22,37 +22,37 @@ namespace tele
 	    RCLCPP_INFO(this->get_logger(), "STARTING NODE: Teleoperation");
 
 		// Parameters
-		this->declare_parameter("frequency", 60);
+		this->declare_parameter("frequency", 60.0);
 		double frequency = this->get_parameter("frequency").get_parameter_value().get<double>();
-		this->declare_parameter("axis_linear_x", 4);
+		this->declare_parameter("axis_linear_x", 5);
 		linear_x_ = this->get_parameter("axis_linear_x").get_parameter_value().get<int>();
-		this->declare_parameter("axis_linear_y", 3);
+		this->declare_parameter("axis_linear_y", 2);
 		linear_y_ = this->get_parameter("axis_linear_y").get_parameter_value().get<int>();
-		this->declare_parameter("axis_linear_z", 1);
+		this->declare_parameter("axis_linear_z", 3);
 		linear_z_ = this->get_parameter("axis_linear_z").get_parameter_value().get<int>();
-		this->declare_parameter("axis_angular", 0);
-		angular_ = this->get_parameter("axis_linear_x").get_parameter_value().get<int>();
+		this->declare_parameter("axis_angular", 4);
+		angular_ = this->get_parameter("axis_angular").get_parameter_value().get<int>();
 		this->declare_parameter("scale_linear", 1.0);
 		l_scale_ = this->get_parameter("scale_linear").get_parameter_value().get<double>();
-		this->declare_parameter("scale_angular", 1.0);
+		this->declare_parameter("scale_angular", -1.0);
 		a_scale_ = this->get_parameter("scale_angular").get_parameter_value().get<double>();
 		this->declare_parameter("scale_bumper", 1.0);
 		B_scale_ = this->get_parameter("scale_bumper").get_parameter_value().get<double>();
 		this->declare_parameter("button_switch", 0);
 		sw_ = this->get_parameter("button_switch").get_parameter_value().get<int>();
-		this->declare_parameter("button_estop", 1);
+		this->declare_parameter("button_estop", 3);
 		es_ = this->get_parameter("button_estop").get_parameter_value().get<int>();
 		this->declare_parameter("rb", 5);
 		RB_ = this->get_parameter("rb").get_parameter_value().get<int>();;
-		this->declare_parameter("lb", 2);
+		this->declare_parameter("lb", 4);
 		LB_ = this->get_parameter("lb").get_parameter_value().get<int>();
-		this->declare_parameter("rt", 5);
+		this->declare_parameter("rt", 7);
 		RT_ = this->get_parameter("rt").get_parameter_value().get<int>();
-		this->declare_parameter("lt", 4);
+		this->declare_parameter("lt", 6);
 		LT_ = this->get_parameter("lt").get_parameter_value().get<int>();
-		this->declare_parameter("updown", 7);
+		this->declare_parameter("updown", 1);
 		UD_ = this->get_parameter("updown").get_parameter_value().get<int>();
-		this->declare_parameter("leftright", 6);
+		this->declare_parameter("leftright", 0);
 		LR_ = this->get_parameter("leftright").get_parameter_value().get<int>();
 		this->declare_parameter("debounce_thresh", 0.15);
 		debounce_thresh_ = static_cast<uint64_t>(1E9*this->get_parameter("debounce_thresh").get_parameter_value().get<double>());
@@ -107,12 +107,7 @@ namespace tele
           auto e = std::make_shared<std_srvs::srv::Empty::Request>();
 
           auto result = switch_mvmnt_client_->async_send_request(e);
-          // Wait for the result.
-          if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result) !=
-            rclcpp::FutureReturnCode::SUCCESS)
-          {
-            RCLCPP_ERROR(this->get_logger(), "Failed to call swithc mvmnt service");
-          }
+		  // don't bother waiting for result, this is fire and forget
 
           estop.data = 0;
           last_time_ = this->get_clock()->now();
@@ -132,9 +127,10 @@ namespace tele
 		twist_.linear.z = -l_scale_*joy->axes[linear_z_];
 		twist_.angular.z = a_scale_*joy->axes[angular_];
 		// NOTE: bottom bumpers used for changing step velocity
-		twist_.angular.x = B_scale_*joy->axes[RB_];
-		twist_.angular.y = B_scale_*joy->axes[LB_];
-		
+		//twist_.angular.x = B_scale_*joy->axes[RB_];
+		//twist_.angular.y = B_scale_*joy->axes[LB_];
+		twist_.angular.x = B_scale_*joy->buttons[RB_];
+		twist_.angular.y = B_scale_*joy->buttons[LB_];
 
 		// Switch Trigger: Button A
 		switch_trigger_ = joy->buttons[sw_];
