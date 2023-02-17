@@ -27,7 +27,7 @@
 <!-- Spot Controller -->
 <node name="spot_real" pkg="mini_ros2" exec="spot_real_interface" output="screen">
 <!-- Agent Number for ARS (GMBC) Policy. Default (0) Loads no Agent. Policy numbers start at 9 and increase by 10. E.G: 9...19...29..."-->
-<param name="agent_num" value="9" />
+<param name="agent_num" value="0" />
 <param from="$(find-pkg-prefix mini_ros2)/config/spot_params.yaml" />
 <param from="$(find-pkg-prefix mini_ros2)/config/joy_params.yaml" />
 <param from="$(find-pkg-prefix mini_ros2)/config/policy_params.yaml" />
