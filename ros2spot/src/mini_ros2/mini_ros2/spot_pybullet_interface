@@ -16,11 +16,7 @@ import copy
 import sys
 
 from ament_index_python.packages import get_package_share_directory
-
-
 sys.path.append(get_package_share_directory('mini_ros2') + '/../')
-print(sys.path)
-
 
 # for spotmicro stuff
 sys.path.append('../')
