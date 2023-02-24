@@ -16,6 +16,6 @@
   <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" exec="joint_state_publisher"/> -->
 
   <!-- rviz will enable us to see the robot. REQUIRED NODE - All other nodes terminate when RViz closes -->
-  <node name="rviz" pkg="rviz" type="rviz" required="True" args="-d $(find mini_ros2)/rviz/spot.rviz"/>
+  <node name="rviz2" pkg="rviz2" exec="rviz2" required="True" /> <!-- args="-d $(find mini_ros2)/rviz/spot.rviz"/> -->
 
 </launch>
