@@ -20,7 +20,7 @@ public:
 
     /// \brief Initialize parameters
     /// \param servo_ctlr: reference to object that controls the servo interface
-    /// \param servo_pin: pin number on Teensy 4.0 (see dataseet)
+    /// \param servo_pin: pin number on Servo Driver
     /// \param home_angle_: default joint angle
     /// \param offset_: motor position offset (due to mechanical fit issues)
     /// \param leg_type_: Front Left, Front Right, Back Left, or Back Right leg (see enum)
@@ -63,17 +63,16 @@ public:
     /// \param pulse: pulse width to write
     void writePulse(const int & pulse);
 
-    /// \brief Attach servo
-    /// \param servo_pin: pin number on Teensy 4.0 (see dataseet)
-    /// \param min_pwm: minimum us value
-    /// \param max_pwm: maximum us value
-    void AssemblyInit(const int & servo_pin, const int & min_pwm_, const int & max_pwm_);
-
-
+    /// \brief return a clamped PWM value that adheres to the limits of this motor
+    /// \param pulse: the pulse width to clamp
+    /// \return a clamped pulse width
+    int clampPulse(const int & pulse);
 
 private:
     // Intrinsic Parameters
     Adafruit_PWMServoDriver& servo;
+    // pin ID for servo controller
+    int servo_pin_;
     // time elapsed since last servo update
     double last_actuated = 0.0;
     // error threshold for servo position
@@ -99,8 +98,8 @@ private:
 
     // Servo's PWM range (usec)
     // NOTE: This is unique to your servos, VERY IMPORTANT
-    int min_pwm = 500;
-    int max_pwm = 2500;
+    int min_pwm = 150;
+    int max_pwm = 600;
 
     // Interpolation to convert from deg to usec
     double conv_slope = 0.0;

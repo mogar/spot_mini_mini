@@ -2,19 +2,14 @@
 
 using namespace std;
 
-
-// TODO: find "servo." and fix them all for Adafruit stuff
-
-
 // Spot Full Constructor
 void SpotServo::Initialize(Adafruit_PWMServoDriver& servo_ctlr, const int & servo_pin, const double & stand_angle_, const double & home_angle_, const double & offset_, const LegType & leg_type_, const JointType & joint_type_,
 						   const int & min_pwm_, const int & max_pwm_, const double & ang_min_pwm, const double & ang_max_pwm)
 {
 	// save the controller so we can send commands later
 	servo = servo_ctlr;
+	servo_pin_ = servo_pin;
 
-	// use defaults for servo attach
-	AssemblyInit(servo_pin, min_pwm, max_pwm);
 	// these are not really min and max, just used for interpolation
 	min_pwm = min_pwm_;
 	max_pwm = max_pwm_;
@@ -28,7 +23,7 @@ void SpotServo::Initialize(Adafruit_PWMServoDriver& servo_ctlr, const int & serv
 	goal_pose = stand_angle + offset;
 	current_pose = stand_angle + offset;
 	int pwm = round((goal_pose) * conv_slope + conv_intcpt);
-	servo.writeMicroseconds(pwm);
+	servo.setPWM(servo_pin_, 0, clampPulse(pwm));
 	last_actuated = millis();
 }
 
@@ -88,14 +83,14 @@ void SpotServo::actuate()
 			}
 			current_pose += direction * (wait_time / 1000.0) * desired_speed;
 			int pwm = round((current_pose) * conv_slope + conv_intcpt);
-			servo.writeMicroseconds(pwm);
+			servo.setPWM(servo_pin_, 0, clampPulse(pwm));
 			last_actuated = millis();
 		} else
 		// if we are at small error thresh, actuate directly
 		{
 			int pwm = round((goal_pose) * conv_slope + conv_intcpt);
 			current_pose = goal_pose;
-			servo.writeMicroseconds(pwm);
+			servo.setPWM(servo_pin_, 0, clampPulse(pwm));
 			last_actuated = millis();
 		}
 	}
@@ -120,14 +115,19 @@ bool SpotServo::GoalReached()
 	return (abs(current_pose - goal_pose) < error_threshold);
 }
 
-void SpotServo::writePulse(const int & pulse)
+int SpotServo::writePulse(const int & pulse)
 {
-	servo.writeMicroseconds(pulse);
+	servo.setPWM(servo_pin_, 0, clampPulse(pulse));
 	calibrating = true;
 }
 
-void SpotServo::AssemblyInit(const int & servo_pin, const int & min_pwm_, const int & max_pwm_)
+void SpotServo::clampPulse(const int & pulse)
 {
-	// use defaults for servo attach
-	servo.attach(servo_pin, min_pwm, max_pwm);
+	if (pulse < min_pwm) {
+		return min_pwm;
+	}
+	if (pulse > max_pwm) {
+		return max_pwm;
+	}
+	return pulse;
 }
