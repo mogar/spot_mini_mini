@@ -5,9 +5,9 @@ import os
 import inspect
 import math
 import time
-import gym
-from gym import spaces
-from gym.utils import seeding
+import gymnasium as gym
+from gymnasium import spaces
+from gymnasium.utils import seeding
 import numpy as np
 import pybullet
 import pybullet_utils.bullet_client as bc
@@ -15,7 +15,7 @@ from . import minitaur
 import pybullet_data
 from . import minitaur_env_randomizer
 from pkg_resources import parse_version
-from gym.envs.registration import register
+from gymnasium.envs.registration import register
 
 currentdir = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe())))

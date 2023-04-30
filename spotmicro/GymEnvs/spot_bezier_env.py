@@ -2,16 +2,16 @@
 """
 import math
 import time
-import gym
+import gymnasium as gym
 import numpy as np
 import pybullet
 import pybullet_data
-from gym import spaces
-from gym.utils import seeding
+from gymnasium import spaces
+from gymnasium.utils import seeding
 from pkg_resources import parse_version
 from spotmicro import spot
 import pybullet_utils.bullet_client as bullet_client
-from gym.envs.registration import register
+from gymnasium.envs.registration import register
 from spotmicro.OpenLoopSM.SpotOL import BezierStepper
 from spotmicro.spot_gym_env import spotGymEnv
 import spotmicro.Kinematics.LieAlgebra as LA

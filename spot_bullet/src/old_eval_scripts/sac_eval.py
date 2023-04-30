@@ -6,7 +6,6 @@ from sac_lib import SoftActorCritic, NormalizedActions, ReplayBuffer, PolicyNetw
 
 from mini_bullet.minitaur_gym_env import MinitaurBulletEnv
 
-import gym
 import torch
 import os
 
