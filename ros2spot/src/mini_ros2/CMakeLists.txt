@@ -34,6 +34,7 @@ include_directories(
 add_library(${PROJECT_NAME}
   src/${PROJECT_NAME}/spot.cpp
   src/${PROJECT_NAME}/teleop.cpp
+  src/${PROJECT_NAME}/joint_control.cpp
 )
 
 ament_target_dependencies(${PROJECT_NAME} rclcpp mini_interfaces std_srvs std_msgs sensor_msgs geometry_msgs)
@@ -41,9 +42,11 @@ ament_target_dependencies(${PROJECT_NAME} rclcpp mini_interfaces std_srvs std_ms
 # Create Cpp executable
 add_executable(spot_sm src/spot_sm.cpp)
 add_executable(teleop_node src/teleop_node.cpp)
+add_executable(joint_control src/joint_control_node.cpp)
 
 ament_target_dependencies(spot_sm rclcpp mini_interfaces std_srvs std_msgs)
 ament_target_dependencies(teleop_node rclcpp mini_interfaces sensor_msgs geometry_msgs std_srvs std_msgs)
+ament_target_dependencies(joint_control rclcpp mini_interfaces std_srvs std_msgs)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(
@@ -58,10 +61,17 @@ teleop_node
 ${PROJECT_NAME}
 )
 
+target_link_libraries(
+joint_control
+# Eigen3::Eigen
+${PROJECT_NAME}
+)
+
 # Install Cpp executables
 install(TARGETS
   spot_sm
   teleop_node
+  joint_control
   DESTINATION lib/${PROJECT_NAME}
 )
 
